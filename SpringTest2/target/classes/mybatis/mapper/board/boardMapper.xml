@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<!-- mybatis mapper파일 -->
+
+<mapper namespace="boardMapper">
+	<resultMap id="boardFileMap" type="board">
+		<id property="bno" column="bno" />
+		<result property="title" column="title"/>
+		<result property="body" column="body"/>
+		<result property="author" column="author"/>
+		<result property="createDate" column="create_date" />
+		
+		<!-- 1:1 테이블 관계 매핑 -->
+		<association property="user" javaType="user">
+			<id property="id" column="id" />
+			<result property="pw" column="pw" />
+			<result property="nick" column="nick" />
+		</association>
+		
+		<!-- 1:n 테이블 관계 매핑 -->
+		<collection property="fileList" ofType="file">
+			<id property="fno" column="fno" />
+			<result property="originalName" column="original_name"/>
+			<result property="savedName" column="saved_name"/>
+			<result property="fileSize" column="file_size"/>
+			<result property="contentType" column="content_type" />
+			<result property="uploadPath" column="upload_path"/>
+			<result property="bno" column="bno"/>
+			<result property="createDate" column="create_date"/>
+		</collection>
+	</resultMap>
+
+<!-- namespace는 매퍼를 식별하기 위한 고유한 값 -->
+	<select id="selectAllBoard" resultType="board">
+		<!-- id는 매퍼 내부에서 고유한 id(자바에서 호출하기 위해서) -->
+		<!-- resultType은 쿼리의 실행 결과를 반환해줄 자바 타입 -->
+		select * from board;
+		<!-- bno : 1,  title : 제목1, body : 본문1, author : hong... -->
+	</select>
+	
+	
+	<!-- 게시글 단건 조회 -->
+	<select id="selectBoardByBno" 
+			parameterType="int" 
+			resultMap="boardFileMap">
+		select * from board
+			left join users
+		on board.author = users.id
+			left join file
+		on board.bno = file.bno
+		where board.bno = #{bno}
+	</select>
+	
+	<!-- 게시글 한건 insert -->
+	<insert id="insertBoardOne" 
+			parameterType="board"
+			useGeneratedKeys="true"
+			keyProperty="bno">
+		insert into board(title, body, author)
+		values(#{title}, #{body}, #{author})
+		<!-- getTitle() -> Title() -> title() -> title -->
+		<!-- 파라미터 vo.setBno(증가된 키) -->
+	</insert>
+	
+	<!-- 게시글 한건 update -->
+	<update id="updateBoardOne" parameterType="board">
+		update board
+		<set>
+			<if test="title != null">
+				title = #{title},
+			</if>
+			<if test="body != null">
+				body = #{body},
+			</if>
+		</set>
+		where bno = #{bno}
+	</update>
+	
+	<!-- 게시글 한건 삭제 -->
+	<delete id="deleteBoardOne" parameterType="int">
+		delete from board where bno = #{bno}
+	</delete>
+</mapper>
